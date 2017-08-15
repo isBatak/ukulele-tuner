@@ -23,21 +23,23 @@ export default class Meter extends PureComponent {
       transform: [{rotate: cents}],
     }
 
-    return <div style={style.meter}>
-      <div style={style.origin}/>
-      <div style={[style.scale, style.strong, style.pointer, pointerStyle]}/>
-      <div style={[style.scale, style.scale_5, style.strong]}/>
-      <div style={[style.scale, style.scale_4]}/>
-      <div style={[style.scale, style.scale_3]}/>
-      <div style={[style.scale, style.scale_2]}/>
-      <div style={[style.scale, style.scale_1]}/>
-      <div style={[style.scale, style.strong]}/>
-      <div style={[style.scale, style.scale1]}/>
-      <div style={[style.scale, style.scale2]}/>
-      <div style={[style.scale, style.scale3]}/>
-      <div style={[style.scale, style.scale4]}/>
-      <div style={[style.scale, style.scale5, style.strong]}/>
-    </div>
+    return (
+      <div style={style.meter}>
+        <div style={style.origin}/>
+        <div style={[style.scale, style.strong, style.pointer, pointerStyle]}/>
+        <div style={[style.scale, style.scale_5, style.strong]}/>
+        <div style={[style.scale, style.scale_4]}/>
+        <div style={[style.scale, style.scale_3]}/>
+        <div style={[style.scale, style.scale_2]}/>
+        <div style={[style.scale, style.scale_1]}/>
+        <div style={[style.scale, style.strong]}/>
+        <div style={[style.scale, style.scale1]}/>
+        <div style={[style.scale, style.scale2]}/>
+        <div style={[style.scale, style.scale3]}/>
+        <div style={[style.scale, style.scale4]}/>
+        <div style={[style.scale, style.scale5, style.strong]}/>
+      </div>
+    )
   }
 }
 

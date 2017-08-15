@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import Tuner from '../core/tuner';
-import Meter from '../components/meter'
+import { Meter } from '../components'
 
 class Index extends Component {
   constructor(props) {
