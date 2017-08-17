@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import PitchFinder from 'pitchfinder';
+import getUserMedia from 'get-user-media-promise';
 
-export default function tuner(WrappedComponent, sampleRate = 22050, bufferSize = 2048) {
+export default function tuner(WrappedComponent) {
   return class extends Component {
+    FFTSIZE = 2048;
     middleA = 440;
     semitone = 69;
     noteStrings = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
@@ -14,62 +16,71 @@ export default function tuner(WrappedComponent, sampleRate = 22050, bufferSize =
         note: {
           name: 'A',
           octave: 4,
-          frequency: 440,
+          frequency: this.middleA,
         },
       }
 
-      this.pitchFinder = new PitchFinder.YIN({
-        sampleRate
-      });
+      this.dispatchAudioData = this.dispatchAudioData.bind(this);
     }
 
     componentDidMount() {
-      navigator.getUserMedia = navigator.getUserMedia ||
-        navigator.webkitGetUserMedia ||
-        navigator.mozGetUserMedia;
+      this.stream = null;
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.analyser = this.audioContext.createAnalyser();
+      this.gainNode = this.audioContext.createGain();
+      this.microphone = null;
 
-      if (navigator.getUserMedia) {
-        console.log('getUserMedia supported.');
-        navigator.getUserMedia(
-          // constraints - only audio needed for this app
-          {
-            audio: true
-          },
+      this.gainNode.gain.value = 0;
+      this.analyser.fftSize = this.FFTSIZE;
+      this.analyser.smoothingTimeConstant = 0;
 
-          // Success callback
-          (stream) => {
+      this.frequencyBufferLength = this.FFTSIZE;
+      this.frequencyBuffer = new Float32Array(this.frequencyBufferLength);
 
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start(bufferSize);
-            console.log(mediaRecorder.state);
-            console.log("recorder started");
+      this.pitchFinder = new PitchFinder.YIN({
+        sampleRate: this.audioContext.sampleRate
+      });
 
-            mediaRecorder.ondataavailable = (event) => {
-              console.log(event.data);
-              const frequency = this.pitchFinder(event.data);
-              console.log(frequency);
-              if (frequency) {
-                const note = this.getNote(frequency)
-                this.setState({
-                  note: {
-                    name: this.noteStrings[note % 12],
-                    value: note,
-                    cents: this.getCents(frequency, note),
-                    octave: parseInt(note / 12) - 1,
-                    frequency: frequency,
-                  }
-                });
-              }
-            }
-          },
+      this.requestUserMedia();
+    }
 
-          // Error callback
-          (err) => {
-            console.log('The following gUM error occured: ' + err);
+    requestUserMedia() {
+      getUserMedia({
+        audio: true
+      }).then((stream) => {
+        this.sendingAudioData = true;
+        this.stream = stream;
+        this.microphone = this.audioContext.createMediaStreamSource(stream);
+        this.microphone.connect(this.analyser);
+        this.analyser.connect(this.gainNode);
+        this.gainNode.connect(this.audioContext.destination);
+
+        requestAnimationFrame(this.dispatchAudioData);
+      }).catch(function(err) {
+        console.log(err.name + ": " + err.message);
+      });
+    }
+
+    dispatchAudioData(timestamp) {
+      if (this.sendingAudioData) {
+        requestAnimationFrame(this.dispatchAudioData);
+      }
+
+      this.analyser.getFloatTimeDomainData(this.frequencyBuffer);
+
+      const frequency = this.pitchFinder(this.frequencyBuffer);
+
+      if (frequency) {
+        const note = this.getNote(frequency)
+        this.setState({
+          note: {
+            name: this.noteStrings[note % 12],
+            value: note,
+            cents: this.getCents(frequency, note),
+            octave: parseInt(note / 12) - 1,
+            frequency: frequency,
           }
-        );
-      } else {
-        console.log('getUserMedia not supported on your browser!');
+        });
       }
     }
 
